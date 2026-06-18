@@ -20,6 +20,10 @@ import struct
 SIZE = 16
 SOI = 0x01
 EOI = 0x02
+# Inbound device frames (status echoes / ACKs / alarm tables) are small; the largest seen is
+# ~105 bytes. Cap well above that so a stray 0x01 claiming a huge length can't stall the parser.
+MAX_INBOUND_FRAME = 2048
+MAX_ANIM_COLORS = 16  # the device's animation decoder is bpp4; >16 colours renders garbage
 REPLY = 0x04  # inbound frames are typed 0x04 (a response/echo)
 REPLY_OK = 0x55  # 'U' — the device's "ok" marker in 04 <op> 55 <data>
 
@@ -112,6 +116,11 @@ def encode_anim_payload(
 ) -> bytes:
     """N frames -> the 0x8b payload. ONE shared palette (frame 0 carries it; frames 1..N
     are reset=1/palCount=0 and index into it). <=16 colours (bpp4) — more renders garbage."""
+    if len(palette) > MAX_ANIM_COLORS:
+        raise ValueError(
+            f"animation palette must be <= {MAX_ANIM_COLORS} colours "
+            f"(got {len(palette)}); the device's animation decoder renders >16 as garbage"
+        )
     bpp = bpp_for(len(palette))  # one shared bpp for the whole clip
     payload = b""
     for i, idxmap in enumerate(per_frame_indices):
@@ -160,11 +169,24 @@ def iter_frames(buf: bytes) -> tuple[list[tuple[int, bytes]], bytes]:
             i += 1
             continue
         if i + 3 > n:
-            break  # need LEN16
+            break  # need LEN16 to decide; carry as leftover
         ln = buf[i + 1] | (buf[i + 2] << 8)
-        end = i + 3 + ln  # body(ln-2) + CRC(2) ends here; EOI at `end`
+        # A real frame's LEN counts type(>=1) + CRC(2), so ln >= 3; reject implausibly large
+        # lengths up front so a stray 0x01 can't make us wait for bytes that'll never form a frame.
+        if ln < 3 or ln > MAX_INBOUND_FRAME:
+            i += 1
+            continue
+        end = i + 3 + ln  # body(ln-2) + CRC(2) ends here; EOI sits at `end`
         if end >= n:
-            break  # incomplete
+            break  # plausible but incomplete — carry leftover and wait for more bytes
+        if buf[end] != EOI:
+            i += 1  # not a real frame boundary -> this 0x01 was noise, resync
+            continue
+        inner = buf[i + 1 : i + 1 + ln]  # LEN bytes + body (the CRC'd region)
+        crc = buf[i + 1 + ln] | (buf[i + 2 + ln] << 8)
+        if crc != (sum(inner) & 0xFFFF):
+            i += 1  # bad CRC -> misaligned/garbage, resync
+            continue
         body = buf[i + 3 : i + 1 + ln]  # type + args (excludes CRC)
         if body:
             frames.append((body[0], body[1:]))
