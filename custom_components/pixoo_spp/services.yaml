@@ -1,0 +1,52 @@
+push_solid:
+  fields:
+    device_id:
+      selector:
+        device:
+          integration: pixoo_spp
+    rgb:
+      required: true
+      example: "[255, 0, 0]"
+      selector:
+        color_rgb:
+
+push_image:
+  fields:
+    device_id:
+      selector:
+        device:
+          integration: pixoo_spp
+    palette:
+      required: true
+      example: "[255,0,0, 0,0,0]"
+      selector:
+        object:
+    pixels:
+      required: true
+      example: "[0,0,1,1, ...256 indices]"
+      selector:
+        object:
+
+upload_animation:
+  fields:
+    device_id:
+      selector:
+        device:
+          integration: pixoo_spp
+    palette:
+      required: true
+      example: "[255,0,0, 0,255,0, 0,0,255]"
+      selector:
+        object:
+    frames:
+      required: true
+      example: "[[0,0,...256], [1,1,...256]]"
+      selector:
+        object:
+    timecode:
+      default: 100
+      selector:
+        number:
+          min: 1
+          max: 65535
+          unit_of_measurement: ms

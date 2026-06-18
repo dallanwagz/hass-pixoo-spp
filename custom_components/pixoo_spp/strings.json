@@ -1,0 +1,60 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Divoom Pixoo (SPP bridge)",
+        "description": "Point at your untether_spp ESP32 bridge — the host and TCP port it serves the Pixoo's SPP stream on.",
+        "data": {
+          "host": "Bridge host (ESP32 IP or hostname)",
+          "port": "Bridge TCP port"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach the bridge at that host:port."
+    },
+    "abort": {
+      "already_configured": "This bridge is already configured."
+    }
+  },
+  "entity": {
+    "light": {
+      "brightness": { "name": "Brightness" }
+    },
+    "sensor": {
+      "device_brightness": { "name": "Brightness (reported)" }
+    },
+    "binary_sensor": {
+      "link": { "name": "Bridge link" }
+    }
+  },
+  "services": {
+    "push_solid": {
+      "name": "Push solid colour",
+      "description": "Fill the whole 16x16 panel with one RGB colour.",
+      "fields": {
+        "device_id": { "name": "Device", "description": "Which Pixoo (if more than one)." },
+        "rgb": { "name": "Colour", "description": "RGB colour to fill the panel with." }
+      }
+    },
+    "push_image": {
+      "name": "Push still image",
+      "description": "Push a 16x16 still from a palette and 256 row-major palette indices.",
+      "fields": {
+        "device_id": { "name": "Device", "description": "Which Pixoo (if more than one)." },
+        "palette": { "name": "Palette", "description": "Flattened RGB (up to 16 colours)." },
+        "pixels": { "name": "Pixels", "description": "256 palette indices, row-major." }
+      }
+    },
+    "upload_animation": {
+      "name": "Upload animation",
+      "description": "Upload an animation that then loops on-device. One shared palette (<=16 colours).",
+      "fields": {
+        "device_id": { "name": "Device", "description": "Which Pixoo (if more than one)." },
+        "palette": { "name": "Palette", "description": "Shared flattened RGB palette (up to 16 colours)." },
+        "frames": { "name": "Frames", "description": "List of frames; each is 256 palette indices." },
+        "timecode": { "name": "Frame time (ms)", "description": "Per-frame duration." }
+      }
+    }
+  }
+}
