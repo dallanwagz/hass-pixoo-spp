@@ -57,6 +57,7 @@ def fake_connection(monkeypatch):
         return FakeReader(), writer
 
     mock = AsyncMock(side_effect=_open)
-    monkeypatch.setattr("custom_components.pixoo_spp.coordinator.asyncio.open_connection", mock)
+    # The coordinator opens its connection through untether_bt.SppConnection now.
+    monkeypatch.setattr("untether_bt.connection.asyncio.open_connection", mock)
     monkeypatch.setattr("custom_components.pixoo_spp.config_flow.asyncio.open_connection", mock)
     return writer, mock
