@@ -8,5 +8,5 @@
   "integration_type": "device",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/dallanwagz/hass-pixoo-spp/issues",
-  "requirements": []
+  "requirements": ["untether-bt>=0.7"]
 }
